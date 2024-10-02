@@ -5,64 +5,83 @@
 
 #define DT_DRV_COMPAT ilitek_ili9163c
 
-#include <zephyr/drivers/sensor.h>
-#include <zephyr/logging/log.h>
-
 #include "display_ili9163c.h"
+#include "display_ili9xxx.h"
 
-LOG_MODULE_REGISTER(ILI9163C, CONFIG_SENSOR_LOG_LEVEL);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(ILI9163C, CONFIG_DISPLAY_LOG_LEVEL);
 
-struct ili9163c_config {
-};
-
-struct ili9163c_data {
-};
-
-static int ili9163c_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr, const struct sensor_value *val)
+int ili9163_regs_init(const struct device *dev)
 {
+	const struct ili9xxx_config *config = dev->config;
+	const struct ili9163_regs *regs = config->regs;
+
+	int r;
+
+	LOG_HEXDUMP_DBG(regs->gamset, ILI9163_GAMSET_LEN, "GAMSET");
+	r = ili9xxx_transmit(dev, ILI9163_GAMSET, regs->gamset, ILI9163_GAMSET_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->gamadj, ILI9163_GAMADJ_LEN, "GAMADJ");
+	r = ili9xxx_transmit(dev, ILI9163_GAMADJ, regs->gamadj, ILI9163_GAMADJ_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->pgamctrl, ILI9163_PGAMCTRL_LEN, "PGAMCTRL");
+	r = ili9xxx_transmit(dev, ILI9163_PGAMCTRL, regs->pgamctrl, ILI9163_PGAMCTRL_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->ngamctrl, ILI9163_NGAMCTRL_LEN, "NGAMCTRL");
+	r = ili9xxx_transmit(dev, ILI9163_NGAMCTRL, regs->ngamctrl, ILI9163_NGAMCTRL_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->frmctr1, ILI9163_FRMCTR1_LEN, "FRMCTR1");
+	r = ili9xxx_transmit(dev, ILI9163_FRMCTR1, regs->frmctr1, ILI9163_FRMCTR1_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->dispinv, ILI9163_DISPINV_LEN, "DISP_INV");
+	r = ili9xxx_transmit(dev, ILI9163_DISPINV, regs->dispinv, ILI9163_DISPINV_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->pwctrl1, ILI9163_PWCTRL1_LEN, "PWCTRL1");
+	r = ili9xxx_transmit(dev, ILI9163_PWCTRL1, regs->pwctrl1, ILI9163_PWCTRL1_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->pwctrl2, ILI9163_PWCTRL2_LEN, "PWCTRL2");
+	r = ili9xxx_transmit(dev, ILI9163_PWCTRL2, regs->pwctrl2, ILI9163_PWCTRL2_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->vmctrl1, ILI9163_VMCTRL1_LEN, "VMCTRL1");
+	r = ili9xxx_transmit(dev, ILI9163_VMCTRL1, regs->vmctrl1, ILI9163_VMCTRL1_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->vmctrl2, ILI9163_VMCTRL2_LEN, "VMCTRL2");
+	r = ili9xxx_transmit(dev, ILI9163_VMCTRL2, regs->vmctrl2, ILI9163_VMCTRL2_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->madctl, ILI9163_MADCTL_LEN, "MADCTL");
+	r = ili9xxx_transmit(dev, ILI9163_MADCTL, regs->madctl, ILI9163_MADCTL_LEN);
+	if (r < 0) {
+		return r;
+	}
 	return 0;
 }
-
-static int ili9163c_sample_fetch(const struct device *dev, enum sensor_channel chan)
-{
-	struct ili9163c_data *data = dev->data;
-	const struct ili9163c_config *config = dev->config;
-
-	return 0;
-}
-
-static int ili9163c_channel_get(const struct device *dev, enum sensor_channel chan,
-			      struct sensor_value *val)
-{
-	struct ili9163c_data *data = dev->data;
-
-	// TODO: Update val with the sensor value
-	val->val1 = 0;
-	val->val2 = 0;
-
-	return 0;
-}
-
-static int ili9163c_init(const struct device *dev)
-{
-	const struct ili9163c_config *config = dev->config;
-	struct ili9163c_data *data = dev->data;
-
-	return 0;
-}
-
-static const struct sensor_driver_api ili9163c_driver_api = {
-	.attr_set = ili9163c_attr_set,
-	.sample_fetch = ili9163c_sample_fetch,
-	.channel_get = ili9163c_channel_get,
-};
-
-#define ILI9163C_INIT(n)                                                                             \
-	static struct ili9163c_config ili9163c_config_##n = {                                             \
-	};                                                                                         \
-	static struct ili9163c_data ili9163c_data_##n;                                                 \
-	DEVICE_DT_INST_DEFINE(n, ili9163c_init, NULL, &ili9163c_data_##n, &ili9163c_config_##n,          \
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ili9163c_driver_api);
-
-DT_INST_FOREACH_STATUS_OKAY(ILI9163C_INIT)

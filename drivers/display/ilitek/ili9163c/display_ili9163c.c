@@ -85,3 +85,10 @@ int ili9163_regs_init(const struct device *dev)
 	}
 	return 0;
 }
+
+#include "display_ili9xxx.c"
+
+#ifdef CONFIG_ILI9163
+#include "display_ili9163c.h"
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9163);
+#endif

@@ -9,3 +9,11 @@ config ILI9163C
     select SPI
     help
       Enable support for the ILI9163C display controller.
+
+config ILI9163C_READ
+	bool "Allow display_read API with ILI9163C"
+	help
+	  Support display_read API with ILI9163C controllers. This API is opt-in,
+	  because it adds code overhead and is not very performant due to
+	  the requirement to bitshift data read from the ILI9163C. Note the
+	  API only supports RGB565 mode.

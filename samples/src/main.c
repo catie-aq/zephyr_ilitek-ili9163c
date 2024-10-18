@@ -74,7 +74,7 @@ int main(void)
 		return 0;
 	}
 
-		hello_world_label = lv_label_create(lv_scr_act());
+	hello_world_label = lv_label_create(lv_scr_act());
 
 	lv_label_set_text(hello_world_label, "6TRON BY CATIE!");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);

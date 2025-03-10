@@ -7,10 +7,11 @@ Implemented feature:
 
 - [X] Display Initialization
 - [X] Pixel Format Configuration
-- [] Orientation Adjustment.
+- [ ] Orientation Adjustment.
 - [X] Blanking Control.
 - [X] Memory Area Setup.
 - [X] Data Writing.
 
 ## Usage
+
 This display driver can be used to display and draw text, images, and shapes in highly readable form.

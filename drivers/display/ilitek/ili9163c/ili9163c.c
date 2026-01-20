@@ -451,7 +451,7 @@ static const struct display_driver_api ili9163c_api = {
 					n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),               \
 			},                                                                         \
 		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
-		.use_bgr_instead_of_rgb = DT_INST_ENUM_IDX(n, pixel_colors_order),		   \
+		.use_bgr_instead_of_rgb = DT_INST_ENUM_IDX(n, pixel_colors_order),                 \
 		.rotation = DT_INST_PROP(n, rotation),                                             \
 		.x_resolution = DT_INST_PROP(n, width),                                            \
 		.y_resolution = DT_INST_PROP(n, height),                                           \

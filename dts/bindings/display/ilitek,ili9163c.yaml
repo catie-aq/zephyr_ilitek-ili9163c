@@ -22,6 +22,15 @@ properties:
       only 6 color bits are actually used being in practice equivalent to
       RGB666.
 
+  pixel-colors-order:
+    type: string
+    default: "RGB"
+    enum:
+      - "RGB"
+      - "BGR"
+    description:
+      Colors order of the pixel. Some libraries use BGR color ordering instead of RGB.
+
   rotation:
     type: int
     default: 0

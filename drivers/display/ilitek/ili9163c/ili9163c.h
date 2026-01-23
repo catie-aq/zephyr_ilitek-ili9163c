@@ -20,6 +20,7 @@
 
 /* Commands/registers. */
 #define ILI9163C_SWRESET    0x01
+#define ILI9163C_SLPIN      0x10
 #define ILI9163C_SLPOUT     0x11
 #define ILI9163C_DINVON     0x21
 #define ILI9163C_GAMSET     0x26
@@ -80,8 +81,9 @@
 /** Command/data GPIO level for data. */
 #define ILI9163C_DATA 0U
 
-/** Sleep out time (ms), ref. 8.2.12 of ILI9163C manual. */
+/** Sleep Out and Sleep In times (ms), ref. 8.2.12 of ILI9163C manual. */
 #define ILI9163C_SLEEP_OUT_TIME 120
+#define ILI9163C_SLEEP_IN_TIME  120 // Datasheet unclear if it is 5ms or 120ms.
 
 /** Reset pulse time (ms), ref 15.4 of ILI9163C manual. */
 #define ILI9163C_RESET_PULSE_TIME 1
@@ -102,6 +104,20 @@ struct ili9163c_config {
 	const void *regs;
 	int (*regs_init_fn)(const struct device *dev);
 };
+
+/** ILI9163C additional specific functions (not from generic API) */
+
+// The following need to be added to the project prj.conf
+// # Need to switch to user mode to get access to very specific driver functions
+// # See :
+// #  - https://docs.zephyrproject.org/latest/kernel/usermode/syscalls.html
+// #  - https://docs.zephyrproject.org/latest/doxygen/html/group__syscall__apis.html#ga1f5b938fc90bb11e2f8a200fe3b59730
+// CONFIG_USERSPACE=y
+
+#if defined(CONFIG_USERSPACE)
+__syscall int ili9163c_sleep_in(const struct device *dev);
+// __syscall int ili9163c_sleep_out(const struct device *dev);
+#endif
 
 /** ILI9163C registers to be initialized. */
 struct ili9163c_regs {

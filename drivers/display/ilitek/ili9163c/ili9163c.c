@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(ILI9163C, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9163c_data {
+	bool sleep_in_mode;
 	uint8_t default_madctl_reg;
 	uint8_t bytes_per_pixel;
 	enum display_pixel_format pixel_format;
@@ -139,6 +140,52 @@ static int ili9163c_set_brightness(const struct device *dev, uint8_t brightness)
 		       ILI9163C_BACKLIGHT_PERIOD_NS * brightness / ILI9163C_BACKLIGHT_RESOLUTION);
 
 	return r;
+}
+
+int z_impl_ili9163c_sleep_in(const struct device *dev)
+{
+	struct ili9163c_data *data = dev->data;
+
+	if (data->sleep_in_mode == true) {
+		// Already in sleep in mode
+		return 0;
+	}
+
+	LOG_WRN("Going to Sleep Mode");
+
+	int r = ili9163c_transmit(dev, ILI9163C_SLPIN, NULL, 0);
+	if (r < 0) {
+		LOG_ERR("Can't go to Sleep In mode (%d)", r);
+		return r;
+	}
+
+	k_sleep(K_MSEC(ILI9163C_SLEEP_IN_TIME));
+
+	data->sleep_in_mode = true;
+	return 0;
+}
+
+int ili9163c_sleep_out(const struct device *dev)
+{
+
+	struct ili9163c_data *data = dev->data;
+
+	if (data->sleep_in_mode == false) {
+		// Already in sleep out mode
+		return 0;
+	}
+
+	LOG_DBG("Leaving Sleep Mode");
+
+	int r = ili9163c_exit_sleep(dev);
+
+	if (r < 0) {
+		LOG_ERR("Could not exit sleep mode (%d)", r);
+		return r;
+	}
+
+	data->sleep_in_mode = false;
+	return 0;
 }
 
 static int ili9163c_display_blanking_off(const struct device *dev)
@@ -380,6 +427,8 @@ int ili9163c_regs_init(const struct device *dev)
 static int ili9163c_init(const struct device *dev)
 {
 	const struct ili9163c_config *config = dev->config;
+	struct ili9163c_data *data = dev->data;
+	data->sleep_in_mode = false; // must be false at start
 
 	int r;
 
@@ -467,3 +516,19 @@ static const struct display_driver_api ili9163c_api = {
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ili9163c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ILI9163C_INIT);
+
+#ifdef CONFIG_USERSPACE
+
+// See following documentation to add a driver specific function properly:
+//  - https://github.com/zephyrproject-rtos/zephyr/issues/24539#issuecomment-617336759
+//  - https://docs.zephyrproject.org/latest/kernel/usermode/syscalls.html
+//  -
+
+#include <zephyr/internal/syscall_handler.h>
+
+int z_vrfy_ili9163c_sleep_in(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_DISPLAY, &ili9163c_api));
+	return z_impl_ili9163c_sleep_in(dev);
+}
+#endif

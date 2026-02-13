@@ -14,6 +14,8 @@
 LOG_MODULE_REGISTER(ILI9163C, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9163c_data {
+	bool sleep_in_mode;
+	uint8_t default_madctl_reg;
 	uint8_t bytes_per_pixel;
 	enum display_pixel_format pixel_format;
 	enum display_orientation orientation;
@@ -140,6 +142,52 @@ static int ili9163c_set_brightness(const struct device *dev, uint8_t brightness)
 	return r;
 }
 
+int ili9163c_sleep_in(const struct device *dev)
+{
+	struct ili9163c_data *data = dev->data;
+
+	if (data->sleep_in_mode == true) {
+		// Already in sleep in mode
+		return 0;
+	}
+
+	LOG_DBG("Going to Sleep Mode");
+
+	int r = ili9163c_transmit(dev, ILI9163C_SLPIN, NULL, 0);
+	if (r < 0) {
+		LOG_ERR("Can't go to Sleep In mode (%d)", r);
+		return r;
+	}
+
+	k_sleep(K_MSEC(ILI9163C_SLEEP_IN_TIME));
+
+	data->sleep_in_mode = true;
+	return 0;
+}
+
+int ili9163c_sleep_out(const struct device *dev)
+{
+
+	struct ili9163c_data *data = dev->data;
+
+	if (data->sleep_in_mode == false) {
+		// Already in sleep out mode
+		return 0;
+	}
+
+	LOG_DBG("Leaving Sleep Mode");
+
+	int r = ili9163c_exit_sleep(dev);
+
+	if (r < 0) {
+		LOG_ERR("Could not exit sleep mode (%d)", r);
+		return r;
+	}
+
+	data->sleep_in_mode = false;
+	return 0;
+}
+
 static int ili9163c_display_blanking_off(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking off");
@@ -189,7 +237,7 @@ static int ili9163c_set_orientation(const struct device *dev,
 	struct ili9163c_data *data = dev->data;
 
 	int r;
-	uint8_t tx_data = ILI9163C_MADCTL_BGR;
+	uint8_t tx_data = data->default_madctl_reg;
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		/* Do nothing */
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
@@ -236,6 +284,7 @@ static void ili9163c_get_capabilities(const struct device *dev,
 static int ili9163c_configure(const struct device *dev)
 {
 	const struct ili9163c_config *config = dev->config;
+	struct ili9163c_data *data = dev->data;
 
 	int r;
 	enum display_pixel_format pixel_format;
@@ -250,6 +299,12 @@ static int ili9163c_configure(const struct device *dev)
 		pixel_format = PIXEL_FORMAT_RGB_565;
 	} else {
 		pixel_format = PIXEL_FORMAT_RGB_888;
+	}
+
+	if (config->use_bgr_instead_of_rgb) {
+		data->default_madctl_reg = ILI9163C_MADCTL_BGR;
+	} else {
+		data->default_madctl_reg = 0x00;
 	}
 
 	r = ili9163c_set_pixel_format(dev, pixel_format);
@@ -443,6 +498,7 @@ static const struct display_driver_api ili9163c_api = {
 					n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),               \
 			},                                                                         \
 		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
+		.use_bgr_instead_of_rgb = DT_INST_ENUM_IDX(n, pixel_colors_order),                 \
 		.rotation = DT_INST_PROP(n, rotation),                                             \
 		.x_resolution = DT_INST_PROP(n, width),                                            \
 		.y_resolution = DT_INST_PROP(n, height),                                           \

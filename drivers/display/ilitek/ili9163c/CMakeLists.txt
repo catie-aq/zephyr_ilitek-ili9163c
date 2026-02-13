@@ -4,3 +4,4 @@
 zephyr_library()
 
 zephyr_library_sources(ili9163c.c)
+zephyr_include_directories(.)
